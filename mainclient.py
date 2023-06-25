@@ -13,6 +13,7 @@ def connecting_to_server() :
     #message = client.recv(1024).decode()
     #client.send(input(message).encode())
     #print(client.recv(1024).decode())
+    #
 
 
 
@@ -26,7 +27,9 @@ def connecting_to_server() :
         [signup] = a def for signing up
         [disconnection] = a def for disconnecting"""
         client.send(f"('{ORDER}' ,'{str(username)}' ,'{str(password)}')".encode())
-        print(client.recv(2048).decode())
+        receiver = client.recv(2048).decode()
+        return receiver
+    
 
     def signup(username,password,password_again) :
         ORDER = "signup"
@@ -36,7 +39,6 @@ def connecting_to_server() :
         [password] = the password that will be sent to server to check validity"""
         client.send(f"('{ORDER}' ,'{str(username)}' ,'{str(password)}' ,'{str(password_again)}')".encode())
         receiver = client.recv(2048).decode()
-        print(receiver)
         return receiver
 
     def disconnection() :

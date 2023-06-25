@@ -44,7 +44,8 @@ def signin(c,username ,password) :
     [c] = connection we have with our client
     [username] = username that was sent from client
     [password] = password that was sent from the client"""
-
+    #
+    
     conn = sqlite3.connect("userdata.df")
     cur = conn.cursor()
     cur.execute("SELECT * FROM userdata WHERE username = ? and password = ?", (username,password))
