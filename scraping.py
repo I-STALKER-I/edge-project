@@ -11,10 +11,10 @@ import time
 
 
 class gloablism :
-    #"""this class was made for global dataframes that we need
-    #i actually didnt wanted them to be global and instead i put them in a class
-    #[df_gloabl] = our gloabal dataframe
-    #[queue] = for getting the data from multiproccess functions"""
+    """this class was made for global dataframes that we need
+    i actually didnt wanted them to be global and instead i put them in a class
+    [df_gloabl] = our gloabal dataframe
+    [queue] = for getting the data from multiproccess functions"""
 
     df_global = pd.DataFrame(columns=["image","discrip","price","link","market"])
 
@@ -86,6 +86,15 @@ def multi_extract_digikala(row, market) :
 
 
 def divar(search, page_num,queue,city="tehran"):
+        """divar will be scraped here
+        [products] = our products result from the search
+        [df] = a dataframe for our products
+        [search] = what we are searching for
+        [page_num] = page number of site we want to scrape(a result of search has more than one page so we have to know which  page we want)
+        [city] = the city client lives in (divar asks for the city)
+        [gloablism.driver] = our selenium driver
+        [threads] = threads we are making for concurrency
+        [df_dict] = convertion of gloablism.df_global to a dictionary so we can queue it"""
         gloablism.driver.maximize_window()
         gloablism.driver.get(f"https://divar.ir/s/{city}?goods-business-type=all&q={search}&page={page_num}")
         products = gloablism.driver.find_elements(By.CLASS_NAME,"post-card-item-af972.kt-col-6-bee95")
@@ -117,13 +126,22 @@ def divar(search, page_num,queue,city="tehran"):
 
 
 def sender(queue,dicti) :
+    """a func for sending multithreadly
+    [queue] = queue for sending data
+    [dicti] = the dictionary that is going to be sent"""
     queue.put(dicti)
 
 
 def digikala(search, page_num,queue):
         """digikala will be scraped here
+        [search] = what we are searching for
+        [page_num] = page number of site we want to scrape(a result of search has more than one page so we have to know which  page we want)
         [products] = our products result from the search
-        [df] = a dataframe for our products"""
+        [df] = a dataframe for our products
+        [gloablism.driver] = our selenium driver
+        [threads] = threads we are making for concurrency
+        [df_dict] = convertion of gloablism.df_global to a dictionary so we can queue it
+        """
         gloablism.driver.maximize_window()
         gloablism.driver.get(f"https://www.digikala.com/search/?has_selling_stock=1&page={page_num}&q={search}")
         #barrier while ,for stopping the program to proceed without loading the page
@@ -134,12 +152,11 @@ def digikala(search, page_num,queue):
             except Exception :
                 pass
 
-        #driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+
         products = gloablism.driver.find_elements(By.CLASS_NAME,"product-list_ProductList__item__LiiNI")
         gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[9])
         time.sleep(1)
         df = pd.DataFrame({'seleniums' :products})
-        #df.apply(extract, args=("digikala",),axis=1)
         
         threads = []
         for row in df.iterrows() :
@@ -154,6 +171,8 @@ def digikala(search, page_num,queue):
 
         df_dict = gloablism.df_global.to_dict()
         sender_threads = []
+
+        #here we are sending data multithreadly
         for key, values in df_dict.items() :
             thread = threading.Thread(target=sender,args=(queue,{key:values}))
             thread.start()
@@ -162,6 +181,7 @@ def digikala(search, page_num,queue):
         for thread in sender_threads :
             thread.join()
 
+        #this is for telling the receiver that we are done sending
         queue.put("D")
         queue.close()
         print("Digikala is completely done!")
@@ -169,10 +189,12 @@ def digikala(search, page_num,queue):
 def tecnolife(search) :
     pass
 
-#https://divar.ir/s/tehran?goods-business-type=all&q=lenovo&page=6
-#اول عنوانی که میخوای سرچ کنی میدی بعد صفحه رو
 
 def reciever(queue, market) :
+    """a function for receiving multithreaded sendings
+    [dictionary] = a dictionary to put all the things we received in it
+    [income] = incoming from sender
+    """
     dictionary = {}
     while True :
         income = queue.get()
@@ -180,26 +202,36 @@ def reciever(queue, market) :
             break
 
         else :
-            list(income.keys())[0]
-            #print(income.keys(),"key",income.values(),"values")
             dictionary[list(income.keys())[0]] = list(income.values())[0]
 
     if market == "digikala" :
         gloablism.df_digikala = pd.DataFrame(dictionary)
-        #print(gloablism.df_digikala)
     else :
         gloablism.df_divar = pd.DataFrame(dictionary)
-        #print(gloablism.df_divar)
 
             
 
-def multi_search(search) :
+def multi_search(search,page_num) :
     """a function for concurrent searching in all sites
-    [quueu]"""
+    the two main proccess we have in here,digikala scraping
+    and divar scraping are now being proccessed concurrently
+    and theye're proccesseses instead of threads 
+    the queue is a solution to the problem of not getting
+    a return from proccess,the main problem with this work is that
+    sending  and receiving big data would take time we made a solution
+    for it by breaking the data into chunks and sending them multithreadly
+    to the receiver(multithread because i think that this is an IO band work)
+    [queue_1] = first qeueue from multiproccessing
+    [queue_2] = second queue for multiproccessing
+    [digikala_thread] = a proccess for scraping digikala
+    [divar_thread] = a proccesss for scraping divar
+    [receiving_thread_digi] = a receiver thread for queue_1
+    [receiving_thread_divar] = a receiver thread for the queue_2
+    [df_glob] = a global dataframe"""
     queue_2 = multiprocessing.Queue() 
     queue_1 = multiprocessing.Queue()
-    digikala_thread = multiprocessing.Process(target=digikala, args=(search,1,queue_1))
-    divar_thread = multiprocessing.Process(target=divar, args = (search,1,queue_2))
+    digikala_thread = multiprocessing.Process(target=digikala, args=(search,page_num,queue_1))
+    divar_thread = multiprocessing.Process(target=divar, args = (search,page_num,queue_2))
     digikala_thread.start()
     divar_thread.start()
     
@@ -214,9 +246,13 @@ def multi_search(search) :
     df_glob = pd.merge(gloablism.df_digikala, gloablism.df_divar, how='outer')
     return df_glob
 
+def helper() :
+    """for using this module
+    the main function is multi_search
+    that takes two parameters
+    first : what we want to search and it has to be a string
+    second : a number or integer for the page_number"""
+
 
 if __name__ == '__main__' :
-    begin = time.perf_counter()
-    multi_search("لپتاپ")
-    end = time.perf_counter()
-    print(end - begin)
+    help(helper)

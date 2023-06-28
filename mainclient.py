@@ -49,9 +49,44 @@ def connecting_to_server() :
     return (True, signin, signup, disconnection)
 
 
-main_connection_to_server = connecting_to_server()
 
-if main_connection_to_server[0] == True :
-    main_connection_to_server[1]("hashembandari","lolliipopopop")
-    main_connection_to_server[3]()
+
+def main(order,username,password,password_again=None) :
+    '''the main function that controls client
+    [order] = the order to do (signin or signup)
+    [username] = username of client
+    [password] = password of client
+    [password_again] = one of the signup requirments that has to be given'''
+    main_connection_to_server = connecting_to_server()
+    if main_connection_to_server[0] == True :
+        signin = main_connection_to_server[1]
+        signup = main_connection_to_server[2]
+        disconnect = main_connection_to_server[3] 
+
+        if order == 'signin':
+            signin(username,password)
+            disconnect
+            return 1
+        elif order == 'signup' :
+            signup(username,password,password_again)
+            disconnect
+            return 1
+
+        else :
+            raise ValueError
+
+    else :
+        return 0
     
+def helper() :
+    """HELP:
+    the head function is 'main' that controls the client
+    for using this module you have to use 'main' function passing it
+    the requirments,first you have to give the order you want ('signin' or 'signup') as string
+    then giving it the username and password remember for signing up you have to give him a password again
+    it would be like this if we want to signin == main('signin','I-STALKER-I','123456789')
+    remember that mainserver has to be running so this module works because if there is no sever then there is no connection
+    so the client could connect"""
+
+if __name__ == '__main__' :
+    help(helper)
