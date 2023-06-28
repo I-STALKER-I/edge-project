@@ -22,10 +22,46 @@ class gloablism :
     if __name__ == "__main__" :
         df_digikala = None
         df_divar = None
+        df_tecnolife = None
 
     if __name__ != "__main__" :
         driver = webdriver.Chrome("chromedriver.exe")
 
+
+def multi_extract_tecnolife(row,market) :
+    """a func for multithread extracting the data from selenium but why we would do that?
+    i mean isnt using methods like apply or maybe groupby() would be faster ?
+    well the answer is no because this is an io bound work and as i concluded from what i exprienced from using all of this methods
+    i can say that methods like apply and groupby are way more suitble for cpu bound works
+    but in here we have an io bound work that needs multithreading and it is the  efficent way
+    [row] = row of our pandas dataframe df
+    [row['image']] = the image column of our global dataframe that is a io.Bytes
+    [row['discrip']] = discription of our product
+    [row['price']] = price of our product
+    [row['link']] = link to the product's web page
+    [row['market']] = what market the product belongs to
+    UPDATE : element finding was multithreaded every element has a new thread
+    [thread_image] = thread for products image
+    [thread_discrip] = thread for finding products discription
+    [thread_price] = finding products price
+    [thread_link] = finding products links"""
+
+    thread_image = threading.Thread(target=image_tecnolife,args=(row,))
+    thread_image.start()
+    thread_discrip = threading.Thread(target=discrip,args=(row, 'ProductComp_product_title__bOrf5'))
+    thread_discrip.start()
+    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row, 'ProductComp_offer_price__HAQ6N'))
+    thread_price.start()
+    thread_link = threading.Thread(target= link_digikala_tecnolife,args=(row,'ProductComp_product_title__bOrf5'))
+    thread_link.start()
+
+    thread_image.join()
+    thread_discrip.join()
+    thread_link.join()
+    thread_price.join()
+    row['market'] = market
+
+    gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True) 
 
 
 
@@ -64,6 +100,20 @@ def multi_extract_divar(row, market, index) :
 
     gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True)
 
+def image_tecnolife(row) :
+    counter = 0
+    while True :
+        counter += 1
+        try :
+            row["image"] = io.BytesIO(requests.get(row['seleniums'].find_element(By.CLASS_NAME,"ProductComp_product_image__JBXYv").find_element(By.TAG_NAME,'img').get_attribute('src')).content)
+            break
+        except Exception :
+            pass
+
+        if counter >= 10 :
+            row["image"] = np.nan
+            break
+            
 def image(row,class_name) :
     counter =  0
     while True :
@@ -92,11 +142,14 @@ def price_divar(row) :
 def link_divar(row,index) :
     row["link"] = row["seleniums"].find_element(By.CSS_SELECTOR,f'#app > div.kt-col-md-12-d59e3.browse-c7458 > main > div > div > div > div > div:nth-child({index}) > a').get_attribute('href')
 
-def price_digikala(row) :
-    row["price"] = row["seleniums"].find_element(By.CLASS_NAME,"d-flex.ai-center").text
+def price_digikala_tecnolife(row,class_name) :
+    try :
+        row["price"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
+    except Exception :
+        row['price'] = np.nan
 
-def link_digikala(row) :
-    row["link"] = row["seleniums"].find_element(By.CLASS_NAME,"d-block.pointer.pos-relative").get_attribute('href')
+def link_digikala_tecnolife(row,class_name) :
+    row["link"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('href')
 
 def multi_extract_digikala(row, market) :
     """a func for multithread extracting the data from selenium but why we would do that?
@@ -120,9 +173,9 @@ def multi_extract_digikala(row, market) :
     thread_image.start()
     thread_discrip = threading.Thread(target=discrip,args=(row, 'ellipsis-2.text-body2-strong'))
     thread_discrip.start()
-    thread_price = threading.Thread(target=price_digikala,args=(row,))
+    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row,"d-flex.ai-center"))
     thread_price.start()
-    thread_link = threading.Thread(target= link_digikala,args=(row,))
+    thread_link = threading.Thread(target= link_digikala_tecnolife,args=(row,"d-block.pointer.pos-relative"))
     thread_link.start()
 
     thread_image.join()
@@ -147,8 +200,15 @@ def divar(search, page_num,queue,city="tehran"):
         [threads] = threads we are making for concurrency
         [df_dict] = convertion of gloablism.df_global to a dictionary so we can queue it"""
         gloablism.driver.maximize_window()
+        #gloablism.driver.minimize_window()
         gloablism.driver.get(f"https://divar.ir/s/{city}?goods-business-type=all&q={search}&page={page_num}")
         products = gloablism.driver.find_elements(By.CLASS_NAME,"post-card-item-af972.kt-col-6-bee95")
+        if len(products) == 0 :
+            queue.put("N")
+            queue.put("D")
+            queue.close()
+            print("No products for divar!")
+            return 0
         df = pd.DataFrame({'seleniums' :products})
 
         threads = []
@@ -194,17 +254,30 @@ def digikala(search, page_num,queue):
         [df_dict] = convertion of gloablism.df_global to a dictionary so we can queue it
         """
         gloablism.driver.maximize_window()
+        #gloablism.driver.minimize_window()
         gloablism.driver.get(f"https://www.digikala.com/search/?has_selling_stock=1&page={page_num}&q={search}")
         #barrier while ,for stopping the program to proceed without loading the page
+        counter = 0
         while True :
+            counter += 1
             try :
                 gloablism.driver.find_element(By.CLASS_NAME,'w-100.radius-medium.d-inline-block.lazyloaded')
                 break
             except Exception :
                 pass
 
+            if counter >= 30 :
+                break
+
 
         products = gloablism.driver.find_elements(By.CLASS_NAME,"product-list_ProductList__item__LiiNI")
+        if len(products) == 0 :
+            queue.put("N")
+            queue.put("D")
+            queue.close()
+            print("No products for Digikala!")
+            return 0
+
         gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[9])
         time.sleep(1)
         df = pd.DataFrame({'seleniums' :products})
@@ -237,8 +310,68 @@ def digikala(search, page_num,queue):
         queue.close()
         print("Digikala is completely done!")
 
-def tecnolife(search) :
-    pass
+def tecnolife(search, page_num, queue) :
+    """technolife will be scraped here
+    [search] = what we are searching for
+    [page_num] = page number of site we want to scrape(a result of search has more than one page so we have to know which  page we want)
+    [products] = our products result from the search
+    [df] = a dataframe for our products
+    [gloablism.driver] = our selenium driver
+    [threads] = threads we are making for concurrency
+    [df_dict] = convertion of gloablism.df_global to a dictionary so we can queue it"""
+
+    gloablism.driver.maximize_window()
+    #gloablism.driver.minimize_window()
+    gloablism.driver.get(f"https://www.technolife.ir/product/list/search?keywords={search}&page={page_num}&only_available=true")
+    #barrier while ,for stopping the program to proceed without loading the page
+   #while True :
+        #try :
+        #    gloablism.driver.find_element(By.CLASS_NAME,'ProductComp_product_image__JBXYv')
+        #    break
+        #except Exception :
+        #    pass
+
+
+    products = gloablism.driver.find_elements(By.CLASS_NAME, "ProductPrlist_product__PdoZm")
+    if len(products) == 0 :
+        queue.put("N")
+        queue.put("D")
+        queue.close()
+        print("No products for tecnolife!")
+        return 0
+    gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[9])
+    time.sleep(1)
+    df = pd.DataFrame({'seleniums' :products})
+        
+    threads = []
+    for row in df.iterrows() :
+        thread = threading.Thread(target=multi_extract_tecnolife,args=(row[1], "tecnolife"))
+        thread.start()
+        threads.append(thread)
+        
+    for thread in threads :
+        thread.join()
+
+    gloablism.df_global.drop("seleniums",inplace=True,axis=1)
+
+    df_dict = gloablism.df_global.to_dict()
+    sender_threads = []
+
+    #here we are sending data multithreadly
+    for key, values in df_dict.items() :
+        thread = threading.Thread(target=sender,args=(queue,{key:values}))
+        thread.start()
+        sender_threads.append(thread)
+
+    for thread in sender_threads :
+        thread.join()
+
+    #this is for telling the receiver that we are done sending
+    queue.put("D")
+    queue.close()
+    print("tecnolife is completely done!")
+
+    #https://www.technolife.ir/product/list/search?keywords=lenovo&page=2
 
 
 def reciever(queue, market) :
@@ -252,13 +385,19 @@ def reciever(queue, market) :
         if income == "D" :
             break
 
+        elif income == "N" :
+            dictionary = {'image':[np.nan],'discrip' : [np.nan],'price' : [np.nan], 'link' : [np.nan],'market' : [np.nan]}
+            pass            
+
         else :
             dictionary[list(income.keys())[0]] = list(income.values())[0]
 
     if market == "digikala" :
         gloablism.df_digikala = pd.DataFrame(dictionary)
-    else :
+    elif market == "divar" :
         gloablism.df_divar = pd.DataFrame(dictionary)
+    else :
+        gloablism.df_tecnolife = pd.DataFrame(dictionary)
 
             
 
@@ -278,23 +417,34 @@ def multi_search(search,page_num) :
     [divar_thread] = a proccesss for scraping divar
     [receiving_thread_digi] = a receiver thread for queue_1
     [receiving_thread_divar] = a receiver thread for the queue_2
+
     [df_glob] = a global dataframe"""
     queue_2 = multiprocessing.Queue() 
     queue_1 = multiprocessing.Queue()
+    queue_3 = multiprocessing.Queue()
     digikala_thread = multiprocessing.Process(target=digikala, args=(search,page_num,queue_1))
     divar_thread = multiprocessing.Process(target=divar, args = (search,page_num,queue_2))
+    tecnolife_thread = multiprocessing.Process(target=tecnolife,args=(search,page_num,queue_3))
     digikala_thread.start()
     divar_thread.start()
+    tecnolife_thread.start()
     
     receiving_thread_digi = threading.Thread(target=reciever,args=(queue_1,"digikala"))
     receiving_thread_divar = threading.Thread(target=reciever,args=(queue_2,"divar"))
+    receiving_thread_tecnolife = threading.Thread(target=reciever,args=(queue_3,"tecnolife"))
     receiving_thread_digi.start()
     receiving_thread_divar.start()
+    receiving_thread_tecnolife.start()
 
     receiving_thread_divar.join()
     receiving_thread_digi.join()
+    receiving_thread_tecnolife.join()
 
-    df_glob = pd.merge(gloablism.df_digikala, gloablism.df_divar, how='outer')
+    df_digikala_divar = pd.concat([gloablism.df_digikala,gloablism.df_divar])
+    #df_digikala_divar = pd.merge(gloablism.df_digikala, gloablism.df_divar, how='outer')
+    #df_glob = pd.merge(df_digikala_divar,gloablism.df_tecnolife,how='outer')
+    df_glob = pd.concat([df_digikala_divar,gloablism.df_tecnolife])
+
     return df_glob
 
 def helper() :
