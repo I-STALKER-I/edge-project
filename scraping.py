@@ -40,21 +40,63 @@ def multi_extract_divar(row, market, index) :
     [row['discrip']] = discription of our product
     [row['price']] = price of our product
     [row['link']] = link to the product's web page
-    [row['market']] = what market the product belongs to"""
+    [row['market']] = what market the product belongs to
+    UPDATE : element finding was multithreaded every element has a new thread
+    [thread_image] = thread for products image
+    [thread_discrip] = thread for finding products discription
+    [thread_price] = finding products price
+    [thread_link] = finding products links"""
+    thread_image = threading.Thread(target=image,args=(row,"kt-image-block__image"))
+    thread_image.start()
+    thread_discrip = threading.Thread(target=discrip,args=(row,'kt-post-card__title'))
+    thread_discrip.start()
+    thread_price = threading.Thread(target=price_divar,args=(row,))
+    thread_price.start()
+    thread_link = threading.Thread(target=link_divar,args=(row,index))
+    thread_link.start()
+
+
+    thread_image.join()
+    thread_discrip.join()
+    thread_link.join()
+    thread_price.join()
+    row['market'] = market
+
+    gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True)
+
+def image(row,class_name) :
+    counter =  0
     while True :
+        counter += 1
         try :
-            row["image"] = io.BytesIO(requests.get(row["seleniums"].find_element(By.CLASS_NAME,"kt-image-block__image").get_attribute('src')).content)
+            row["image"] = io.BytesIO(requests.get(row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('src')).content)
             break
         except Exception :
             pass
-    row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,'kt-post-card__title').text
+
+
+        if counter >= 10 :
+            row["image"] = np.nan
+            break
+
+def discrip(row,class_name) :
+    row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
+
+def price_divar(row) :
+
     try :
         row["price"] = row["seleniums"].find_elements(By.CLASS_NAME,"kt-post-card__description")[1].text
     except Exception :
         row["price"] = np.nan
+
+def link_divar(row,index) :
     row["link"] = row["seleniums"].find_element(By.CSS_SELECTOR,f'#app > div.kt-col-md-12-d59e3.browse-c7458 > main > div > div > div > div > div:nth-child({index}) > a').get_attribute('href')
-    row["market"] = market
-    gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True)  
+
+def price_digikala(row) :
+    row["price"] = row["seleniums"].find_element(By.CLASS_NAME,"d-flex.ai-center").text
+
+def link_digikala(row) :
+    row["link"] = row["seleniums"].find_element(By.CLASS_NAME,"d-block.pointer.pos-relative").get_attribute('href')
 
 def multi_extract_digikala(row, market) :
     """a func for multithread extracting the data from selenium but why we would do that?
@@ -67,18 +109,27 @@ def multi_extract_digikala(row, market) :
     [row['discrip']] = discription of our product
     [row['price']] = price of our product
     [row['link']] = link to the product's web page
-    [row['market']] = what market the product belongs to"""
-    while True :
-        try :
-            row["image"] = io.BytesIO(requests.get(row["seleniums"].find_element(By.CLASS_NAME,'w-100.radius-medium').get_attribute('src')).content)
-            break
-        except Exception :
-            pass
-    row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,'ellipsis-2.text-body2-strong').text
-    row["price"] = row["seleniums"].find_element(By.CLASS_NAME,"d-flex.ai-center").text
-    row["link"] = row["seleniums"].find_element(By.CLASS_NAME,"d-block.pointer.pos-relative").get_attribute('href')
-    row["market"] = market
-    
+    [row['market']] = what market the product belongs to
+    UPDATE : element finding was multithreaded every element has a new thread
+    [thread_image] = thread for products image
+    [thread_discrip] = thread for finding products discription
+    [thread_price] = finding products price
+    [thread_link] = finding products links"""
+
+    thread_image = threading.Thread(target=image,args=(row,'w-100.radius-medium'))
+    thread_image.start()
+    thread_discrip = threading.Thread(target=discrip,args=(row, 'ellipsis-2.text-body2-strong'))
+    thread_discrip.start()
+    thread_price = threading.Thread(target=price_digikala,args=(row,))
+    thread_price.start()
+    thread_link = threading.Thread(target= link_digikala,args=(row,))
+    thread_link.start()
+
+    thread_image.join()
+    thread_discrip.join()
+    thread_link.join()
+    thread_price.join()
+    row['market'] = market
 
     gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True) 
 
@@ -251,7 +302,9 @@ def helper() :
     the main function is multi_search
     that takes two parameters
     first : what we want to search and it has to be a string
-    second : a number or integer for the page_number"""
+    second : a number or integer for the page_number
+    i have written many docs you can read. 
+    it will bright many things for you """
 
 
 if __name__ == '__main__' :
