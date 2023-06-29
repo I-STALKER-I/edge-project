@@ -31,10 +31,11 @@ def client_handler(c) :
                     signin(c,username,password)
                 
                 elif content[0] == "signup" :
-                    username ,password, password_again = content[1:]
+                    print(content)
+                    username ,password, password_again, city = content[1:]
                     password = hashlib.sha256(password.encode()).hexdigest()
                     password_again = hashlib.sha256(password_again.encode()).hexdigest()
-                    signup(c,username,password,password_again)
+                    signup(c,username,password,password_again,city)
 
 
 def signin(c,username ,password) :
@@ -54,21 +55,24 @@ def signin(c,username ,password) :
         c.send("Login failed!".encode())
 
 
-def signup(c,username,password,password_again) :
+def signup(c,username,password,password_again,city) :
     """signup from the server side 
     [conn] = connection with the database
     [cur] = a control structure for traversal over the database records
     [c] = connection we have with our client
     [username] = username that was sent from client
-    [password] = password that was sent from the client"""
+    [password] = password that was sent from the client
+    [city] = city that the person lives"""
 
     conn = sqlite3.connect("userdata.df")
     cur = conn.cursor()
     cur.execute("SELECT * FROM userdata WHERE username = ?", (username,))
     if cur.fetchall() :
         c.send("[CONFLICT] This username has been taken...".encode())
+    elif password != password_again :
+        c.send("[PASSWORDINCORRECT] please enter your password correctly...")
     else :
-        cur.execute("INSERT INTO userdata (username, password) VALUES (?, ?)",(username,password))
+        cur.execute("INSERT INTO userdata (username, password , city) VALUES (?, ?, ?)",(username, password, city))
         c.send("Signup successfull!".encode())
         conn.commit()
 
