@@ -31,13 +31,13 @@ def connecting_to_server() :
         return receiver
     
 
-    def signup(username,password,password_again) :
+    def signup(username,password,password_again,city) :
         ORDER = "signup"
         """signup from the client side
         [ORDER] = the order we are giving to the server to what to do
         [username] = the username that will be sent to server to check validity
         [password] = the password that will be sent to server to check validity"""
-        client.send(f"('{ORDER}' ,'{str(username)}' ,'{str(password)}' ,'{str(password_again)}')".encode())
+        client.send(f"('{ORDER}' ,'{str(username)}' ,'{str(password)}' ,'{str(password_again)}' ,'{str(city)}')".encode())
         receiver = client.recv(2048).decode()
         return receiver
 
@@ -51,7 +51,7 @@ def connecting_to_server() :
 
 
 
-def main(order,username,password,password_again=None) :
+def main(order,username,password,password_again=None,city=None) :
     '''the main function that controls client
     [order] = the order to do (signin or signup)
     [username] = username of client
@@ -59,17 +59,18 @@ def main(order,username,password,password_again=None) :
     [password_again] = one of the signup requirments that has to be given'''
     main_connection_to_server = connecting_to_server()
     if main_connection_to_server[0] == True :
-        signin = main_connection_to_server[1]
-        signup = main_connection_to_server[2]
-        disconnect = main_connection_to_server[3] 
+        
+        #signin = main_connection_to_server[1]
+        #signup = main_connection_to_server[2]
+        #disconnect = main_connection_to_server[3] 
 
         if order == 'signin':
-            signin(username,password)
-            disconnect
+            print(main_connection_to_server[1](username,password))
+            main_connection_to_server[3]()
             return 1
         elif order == 'signup' :
-            signup(username,password,password_again)
-            disconnect
+            print(main_connection_to_server[2](username,password,password_again,city))
+            main_connection_to_server[3]()
             return 1
 
         else :
