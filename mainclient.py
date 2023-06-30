@@ -1,4 +1,5 @@
 import socket
+import json
 def connecting_to_server() :
     """make sures that the client is connected to the server
     [client] = A subclass of _socket.socket(for more info type help(client))"""
@@ -8,13 +9,6 @@ def connecting_to_server() :
     except Exception :
         print("Error [connection to the server failed]")
         return (False,"[connection to the server failed]")
-    #message = client.recv(1024).decode()
-    #client.send(input(message).encode())
-    #message = client.recv(1024).decode()
-    #client.send(input(message).encode())
-    #print(client.recv(1024).decode())
-    #
-
 
 
     def signin(username,password) :
