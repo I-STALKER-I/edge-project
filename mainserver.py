@@ -2,6 +2,13 @@ import sqlite3
 import hashlib
 import socket
 import threading
+import mainpagescraper
+
+print("[LOADING] server is loading...")
+class globalisation :
+    main_page = mainpagescraper.main()
+    """a class for globalisation"""
+    is_connected = False
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(("localhost",9999))

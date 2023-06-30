@@ -17,12 +17,9 @@ class gloablism :
     [queue] = for getting the data from multiproccess functions"""
 
     df_global = pd.DataFrame(columns=["image","discrip","price","link","market"])
-
-
-    if __name__ == "__main__" :
-        df_digikala = None
-        df_divar = None
-        df_tecnolife = None
+    df_digikala = None
+    df_divar = None
+    df_tecnolife = None
 
     if __name__ != "__main__" :
         driver = webdriver.Chrome("chromedriver.exe")
@@ -50,7 +47,8 @@ def multi_extract_tecnolife(row,market) :
     thread_image.start()
     thread_discrip = threading.Thread(target=discrip,args=(row, 'ProductComp_product_title__bOrf5'))
     thread_discrip.start()
-    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row, 'ProductComp_offer_price__HAQ6N'))
+    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row, 'ProductComp_main_price__XgWce'))
+    
     thread_price.start()
     thread_link = threading.Thread(target= link_digikala_tecnolife,args=(row,'ProductComp_product_title__bOrf5'))
     thread_link.start()
@@ -105,7 +103,7 @@ def image_tecnolife(row) :
     while True :
         counter += 1
         try :
-            row["image"] = io.BytesIO(requests.get(row['seleniums'].find_element(By.CLASS_NAME,"ProductComp_product_image__JBXYv").find_element(By.TAG_NAME,'img').get_attribute('src')).content)
+            row["image"] = row['seleniums'].find_element(By.CLASS_NAME,"ProductComp_product_image__JBXYv").find_element(By.TAG_NAME,'img').get_attribute('src')
             break
         except Exception :
             pass
@@ -119,7 +117,7 @@ def image(row,class_name) :
     while True :
         counter += 1
         try :
-            row["image"] = io.BytesIO(requests.get(row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('src')).content)
+            row["image"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('src')
             break
         except Exception :
             pass
@@ -130,7 +128,10 @@ def image(row,class_name) :
             break
 
 def discrip(row,class_name) :
-    row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
+    try :
+        row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
+    except Exception :
+        row["discrip"] = np.nan
 
 def price_divar(row) :
 
@@ -149,7 +150,10 @@ def price_digikala_tecnolife(row,class_name) :
         row['price'] = np.nan
 
 def link_digikala_tecnolife(row,class_name) :
-    row["link"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('href')
+    try :
+        row["link"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).get_attribute('href')
+    except Exception :
+        row['link'] = np.nan
 
 def multi_extract_digikala(row, market) :
     """a func for multithread extracting the data from selenium but why we would do that?
@@ -171,9 +175,9 @@ def multi_extract_digikala(row, market) :
 
     thread_image = threading.Thread(target=image,args=(row,'w-100.radius-medium'))
     thread_image.start()
-    thread_discrip = threading.Thread(target=discrip,args=(row, 'ellipsis-2.text-body2-strong'))
+    thread_discrip = threading.Thread(target=discrip,args=(row, 'ellipsis-2'))
     thread_discrip.start()
-    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row,"d-flex.ai-center"))
+    thread_price = threading.Thread(target=price_digikala_tecnolife,args=(row,"d-flex.ai-center.jc-end"))
     thread_price.start()
     thread_link = threading.Thread(target= link_digikala_tecnolife,args=(row,"d-block.pointer.pos-relative"))
     thread_link.start()
@@ -278,7 +282,7 @@ def digikala(search, page_num,queue):
             print("No products for Digikala!")
             return 0
 
-        gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[9])
+        gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[len(products)//2])
         time.sleep(1)
         df = pd.DataFrame({'seleniums' :products})
         
@@ -339,7 +343,7 @@ def tecnolife(search, page_num, queue) :
         queue.close()
         print("No products for tecnolife!")
         return 0
-    gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[9])
+    gloablism.driver.execute_script("arguments[0].scrollIntoView()", products[len(products)//2])
     time.sleep(1)
     df = pd.DataFrame({'seleniums' :products})
         
