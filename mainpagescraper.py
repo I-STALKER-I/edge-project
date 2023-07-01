@@ -83,7 +83,7 @@ def mobile(queue) :
     [threader] = multithread sending from queue to receiver
     [queue] = our connection with receiver"""
     """mobile will be scraped in here"""
-    df = scraping.multi_search('گوشی','1')
+    df = scraping.multi_search('گوشی','1').dropna()
     #print(df.head(50))
     chunk_1 = df[df["market"] == "digikala"].head(4)
     chunk_2 = df[df["market"] == "tecnolife"].head(3)
@@ -99,7 +99,7 @@ def tablet(queue) :
     [df] = dataframe for scraping
     [threader] = multithread sending from queue to receiver
     [queue] = our connection with receiver"""
-    df = scraping.multi_search("تبلت",'1')
+    df = scraping.multi_search("تبلت",'1').dropna()
     chunk_1 = df[df["market"] == "digikala"].head(4)
     chunk_2 = df[df["market"] == "tecnolife"].head(3)
     chunk_3 = df[df["market"] == 'divar'].head(3)
@@ -114,7 +114,7 @@ def loptop(queue) :
     [df] = dataframe for scraping
     [threader] = multithread sending from queue to receiver
     [queue] = our connection with receiver"""
-    df = scraping.multi_search('لپتاپ','1')
+    df = scraping.multi_search('لپتاپ','1').dropna()
     chunk_1 = df[df["market"] == "digikala"].head(4)
     chunk_2 = df[df["market"] == "tecnolife"].head(3)
     chunk_3 = df[df["market"] == 'divar'].head(3)
@@ -127,7 +127,7 @@ def headphone(queue) :
     [df] = dataframe for scraping
     [threader] = multithread sending from queue to receiver
     [queue] = our connection with receiver"""
-    df = scraping.multi_search('هدفون','1')
+    df = scraping.multi_search('هدفون','1').dropna()
     chunk_1 = df[df["market"] == "digikala"].head(4)
     chunk_2 = df[df["market"] == "tecnolife"].head(3)
     chunk_3 = df[df["market"] == 'divar'].head(3)
@@ -141,7 +141,7 @@ def watch(queue) :
     [df] = dataframe for scraping
     [threader] = multithread sending from queue to receiver
     [queue] = our connection with receiver"""
-    df = scraping.multi_search('واچ','1')
+    df = scraping.multi_search('واچ','1').dropna()
     chunk_1 = df[df["market"] == "digikala"].head(4)
     chunk_2 = df[df["market"] == "tecnolife"].head(3)
     chunk_3 = df[df["market"] == 'divar'].head(3)
@@ -216,10 +216,10 @@ def main() :
     mobile_receive.join()
 
     global_df = scraping.pd.concat([gloablism.headphone,gloablism.loptop,gloablism.mobile,gloablism.tablet,gloablism.watch])
-    global_df = global_df.set_index(['kind','index'])
+    #global_df = global_df.set_index(['kind','index'])
 
 
-    return global_df.dropna()
+    return global_df.dropna().reset_index().drop(['index','level_0'],axis=1)
 
 
 def helper():

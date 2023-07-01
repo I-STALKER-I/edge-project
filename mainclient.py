@@ -1,5 +1,14 @@
 import socket
 import json
+import pandas as pd
+
+class globalisation :
+    """a class for globalisation
+    [main_page] = main_page of site"""
+    is_connected = False
+    main_page = None
+
+
 def connecting_to_server() :
     """make sures that the client is connected to the server
     [client] = A subclass of _socket.socket(for more info type help(client))"""
@@ -39,13 +48,55 @@ def connecting_to_server() :
         """disconnection for the client to end its connection"""
         client.send('!DISCONNECT'.encode())
         return 0
+    
+    def main_page() :
+        """a function for receiving multithreaded sendings
+        [dictionary] = a dictionary to put all the things we received in it
+        [income] = incoming from sender    """
+        dictionary = {}
+        while True :
+            message_length = client.recv(64).decode()
+            income = client.recv(int(message_length))
+            if income :
+                income = json.loads(income.decode())
+                if income == "D" :
+                    break    
 
-    return (True, signin, signup, disconnection)
+                else :
+                    dictionary[list(income.keys())[0]] = list(income.values())[0]
+
+        
+        return pd.DataFrame(dictionary)
+    
+
+    def search(searching_for,page_num) :
+        """a fucntion for searching
+        [client] = the user client
+        [dictionary] = a dictionary to put our json's in it
+        [income] = incoming json from server
+        [message_length] = incoming message length"""
+        client.send(f"('searching', '{searching_for}', '{page_num}')".encode())
+        dictionary = {}
+        while True :
+            message_length = client.recv(64).decode()
+            income = client.recv(int(message_length))
+            if income :
+                income = json.loads(income.decode())
+                if income == "D" :
+                    break    
+
+                else :
+                    dictionary[list(income.keys())[0]] = list(income.values())[0]
+
+        return pd.DataFrame(dictionary)
+
+
+    return (True, signin, signup, disconnection, main_page, search)
 
 
 
 
-def main(order,username,password,password_again=None,city=None) :
+def main(order,username=None,password=None,password_again=None,city=None,searching_for = None,page_num = None) :
     '''the main function that controls client
     [order] = the order to do (signin or signup)
     [username] = username of client
@@ -57,16 +108,39 @@ def main(order,username,password,password_again=None,city=None) :
         #signin = main_connection_to_server[1]
         #signup = main_connection_to_server[2]
         #disconnect = main_connection_to_server[3] 
+        #main_page_receiver = main_connection_to_server[4]
+        #search = main_connection_to_server[5]
 
         if order == 'signin':
-            print(main_connection_to_server[1](username,password))
-            main_connection_to_server[3]()
-            return 1
+            receiver =  main_connection_to_server[1](username,password)
+            if receiver == '1' :
+                globalisation.main_page = main_connection_to_server[4]()
+                globalisation.is_connected = True
+                pass
+                    
+            else :
+                return 0
         elif order == 'signup' :
-            print(main_connection_to_server[2](username,password,password_again,city))
-            main_connection_to_server[3]()
-            return 1
+            receiver = main_connection_to_server[2](username,password,password_again,city)
+            if receiver == '1' :
+                globalisation.main_page = main_connection_to_server[4]()
+                globalisation.is_connected = True
+                return 1
+            else :
+                return 0
+            
+        
 
+        elif order == "disconnect" :
+            main_connection_to_server[3]()
+
+        elif order == "search" :
+                if globalisation.is_connected == True :
+                    return main_connection_to_server[5](searching_for, page_num) 
+                
+                else :
+                    return 0
+        
         else :
             raise ValueError
 
@@ -85,3 +159,7 @@ def helper() :
 
 if __name__ == '__main__' :
     help(helper)
+    print(main("signin",'sinakhol1382','SiNagol1382'))
+    print(globalisation.main_page)
+    print(main("search",searching_for='لپتاپ',page_num=1))
+    main("disconnect")
