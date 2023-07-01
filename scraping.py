@@ -141,8 +141,10 @@ def price_divar(row) :
         row["price"] = np.nan
 
 def link_divar(row,index) :
-    row["link"] = row["seleniums"].find_element(By.CSS_SELECTOR,f'#app > div.kt-col-md-12-d59e3.browse-c7458 > main > div > div > div > div > div:nth-child({index}) > a').get_attribute('href')
-
+    try :
+        row["link"] = row["seleniums"].find_element(By.CSS_SELECTOR,f'#app > div.kt-col-md-12-d59e3.browse-c7458 > main > div > div > div > div > div:nth-child({index}) > a').get_attribute('href')
+    except Exception :
+        row["link"] = np.nan
 def price_digikala_tecnolife(row,class_name) :
     try :
         row["price"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
@@ -206,7 +208,15 @@ def divar(search, page_num,queue,city="tehran"):
         gloablism.driver.maximize_window()
         #gloablism.driver.minimize_window()
         gloablism.driver.get(f"https://divar.ir/s/{city}?goods-business-type=all&q={search}&page={page_num}")
-        products = gloablism.driver.find_elements(By.CLASS_NAME,"post-card-item-af972.kt-col-6-bee95")
+        try :
+            products = gloablism.driver.find_elements(By.CLASS_NAME,"post-card-item-af972.kt-col-6-bee95")
+        except Exception :
+            queue.put("N")
+            queue.put("D")
+            queue.close()
+            print("No products for divar!")
+            return 0
+
         if len(products) == 0 :
             queue.put("N")
             queue.put("D")
@@ -273,8 +283,14 @@ def digikala(search, page_num,queue):
             if counter >= 30 :
                 break
 
+        try :
+            products = gloablism.driver.find_elements(By.CLASS_NAME,"product-list_ProductList__item__LiiNI")
+        except Exception :
+            queue.put("N")
+            queue.put("D")
+            queue.close()
+            print("No products for Digikala!")
 
-        products = gloablism.driver.find_elements(By.CLASS_NAME,"product-list_ProductList__item__LiiNI")
         if len(products) == 0 :
             queue.put("N")
             queue.put("D")
@@ -335,8 +351,15 @@ def tecnolife(search, page_num, queue) :
         #except Exception :
         #    pass
 
+    try :
+        products = gloablism.driver.find_elements(By.CLASS_NAME, "ProductPrlist_product__PdoZm")
+    except Exception :
+        queue.put("N")
+        queue.put("D")
+        queue.close()
+        print("No products for tecnolife!")
+        return 0
 
-    products = gloablism.driver.find_elements(By.CLASS_NAME, "ProductPrlist_product__PdoZm")
     if len(products) == 0 :
         queue.put("N")
         queue.put("D")
@@ -463,3 +486,4 @@ def helper() :
 
 if __name__ == '__main__' :
     help(helper)
+    print(multi_search('چوب','1'))
