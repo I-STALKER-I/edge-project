@@ -4,8 +4,10 @@ import socket
 import threading
 from threading import Lock
 import json
-import mainpagescraper
 import time
+import mainpagescraper
+import productloader
+
 
 if __name__ == "__main__" :
     print("[LOADING] server is loading...")
@@ -13,6 +15,7 @@ if __name__ == "__main__" :
         """a class for globalisation
         [mainpage] = our app's mainpage
         [is connected] = checker if the client has signedin or not"""
+        #---------------------------------------------------------------------------------------------
         main_page = mainpagescraper.main()
 
 
@@ -63,6 +66,10 @@ if __name__ == "__main__" :
                         searching_for, page_num = content[1:]
                         search(searching_for, page_num, c)
 
+                    elif content[0] == "product_loader" :
+                        link, market = content[1:]
+                        products_page_opener(link,market,c)
+
 
 
     def signin(c,username ,password,client) :
@@ -79,6 +86,7 @@ if __name__ == "__main__" :
         if cur.fetchall() :
             c.send('1'.encode())
             client.is_connected = True
+            #----------------------------------------------------------------------------------------------------------
             main_page_sender(c)
         else :
             c.send("0".encode())
@@ -107,6 +115,7 @@ if __name__ == "__main__" :
             c.send("1".encode())
             client.is_connected = True
             conn.commit()
+            #--------------------------------------------------------------------------------------------------------------
             main_page_sender(c)
 
 
@@ -167,6 +176,21 @@ if __name__ == "__main__" :
         c.send(str(len(end)).encode())
         time.sleep(0.5)
         c.send(end.encode())
+
+    def products_page_opener(link,market,c) :
+        try :
+            received = productloader.main(link,market)
+            receive_json = json.dumps(received.to_dict())
+
+            c.send(str(len(receive_json)).encode())
+            c.send(receive_json.encode())
+            return "products_page_opener successfull"
+        except Exception :
+            badlink = json.dumps("Bad link or market")
+            c.send(str(len(badlink)).encode())
+            c.send(badlink.encode())
+            return "products_page_opener unsuccessful"
+
 
 
 
