@@ -160,6 +160,7 @@ def helper() :
 if __name__ == '__main__' :
     help(helper)
     print(main("signin",'sinakhol1382','SiNagol1382'))
-    print(globalisation.main_page)
+    globalisation.main_page.to_csv("main_page.csv")
+    
     print(main("search",searching_for='لپتاپ',page_num=1))
     main("disconnect")

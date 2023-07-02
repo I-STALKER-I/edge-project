@@ -42,7 +42,7 @@ if __name__ == "__main__" :
                 income = c.recv(1024).decode()
             except Exception :
                 break
-            
+
             if income:
                 if income == "!DISCONNECT" :
                     connected = False
