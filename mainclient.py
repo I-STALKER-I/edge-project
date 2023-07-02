@@ -75,7 +75,7 @@ def connecting_to_server() :
         [dictionary] = a dictionary to put our json's in it
         [income] = incoming json from server
         [message_length] = incoming message length"""
-        client.send(f"('searching', '{searching_for}', '{page_num}')".encode())
+        client.send(f"('searching' ,'{searching_for}' ,'{page_num}')".encode())
         dictionary = {}
         while True :
             message_length = client.recv(64).decode()
@@ -90,13 +90,23 @@ def connecting_to_server() :
 
         return pd.DataFrame(dictionary)
 
+    def product_loader(link,market) :
+        client.send(f"('product_loader', '{link}', '{market}')".encode())
+        while True :
+            messsage_length = client.recv(64).decode()
+            income = client.recv(int(messsage_length))
+            if income :
+                income = json.loads(income.decode())
+                break
+        
+        return income
 
-    return (True, signin, signup, disconnection, main_page, search)
+    return (True, signin, signup, disconnection, main_page, search, product_loader)
 
 
 
 
-def main(order,username=None,password=None,password_again=None,city=None,searching_for = None,page_num = None) :
+def main(order,username=None,password=None,password_again=None,city=None,searching_for = None,page_num = None,link = None, market = None) :
     '''the main function that controls client
     [order] = the order to do (signin or signup)
     [username] = username of client
@@ -114,20 +124,22 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
         if order == 'signin':
             receiver =  main_connection_to_server[1](username,password)
             if receiver == '1' :
-                globalisation.main_page = main_connection_to_server[4]()
-                globalisation.is_connected = True
-                pass
-                    
+                #------------------------------------------------------------
+                #globalisation.main_page = main_connection_to_server[4]()
+                globalisation.is_connected = True  
             else :
                 return 0
+
         elif order == 'signup' :
             receiver = main_connection_to_server[2](username,password,password_again,city)
             if receiver == '1' :
-                globalisation.main_page = main_connection_to_server[4]()
+                #----------------------------------------------------------------------------------
+                #globalisation.main_page = main_connection_to_server[4]()
                 globalisation.is_connected = True
                 return 1
             else :
                 return 0
+            
             
         
 
@@ -140,6 +152,10 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
                 
                 else :
                     return 0
+                
+        elif order == "product_loader":
+            if globalisation.is_connected == True :
+                return main_connection_to_server[6](link,market)
         
         else :
             raise ValueError
@@ -159,7 +175,3 @@ def helper() :
 
 if __name__ == '__main__' :
     help(helper)
-    print(main("signin",'sinakhol1382','SiNagol1382'))
-    print(globalisation.main_page)
-    print(main("search",searching_for='لپتاپ',page_num=1))
-    main("disconnect")
