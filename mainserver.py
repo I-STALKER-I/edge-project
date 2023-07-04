@@ -150,7 +150,7 @@ if __name__ == "__main__" :
         c.send(end.encode())
 
     def search(searching_for,page_num,c) :
-        df = mainpagescraper.scraping.multi_search(searching_for,page_num).reset_index().drop('index',axis=1)
+        df = mainpagescraper.scraping.multi_search(searching_for,page_num).reset_index()
         df_dict = df.to_dict()
         mutex = Lock()
         def sender(dicti) :
