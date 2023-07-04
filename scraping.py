@@ -494,7 +494,10 @@ def multi_search(search,page_num) :
     #df_digikala_divar = pd.merge(gloablism.df_digikala, gloablism.df_divar, how='outer')
     #df_glob = pd.merge(df_digikala_divar,gloablism.df_tecnolife,how='outer')
     df_glob = pd.concat([df_digikala_divar,gloablism.df_tecnolife])
-    return df_glob.dropna().reset_index().reset_index().drop('index',axis=1).set_index(['indexer','level_0'])
+    try :
+        return df_glob.dropna().reset_index().reset_index().drop('index',axis=1).set_index(['indexer','level_0'])
+    except Exception :
+        return df_glob.dropna().reset_index().reset_index().drop('index',axis=1)
 
 def helper() :
     """for using this module
