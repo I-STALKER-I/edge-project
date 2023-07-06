@@ -695,7 +695,7 @@ class Ui_MainWindow(object):
         self.t500_text.setText(_translate("MainWindow", "T500 ساعت"))
         self.redminote12_text.setText(_translate("MainWindow", "redmi note12 گوشی"))
 
-
+'''
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
@@ -704,3 +704,4 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
+'''
