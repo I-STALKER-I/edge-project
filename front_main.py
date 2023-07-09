@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog
 from loginpage import Login, Signup
 from mainpage1 import Ui_MainWindow
+import ResultUi
 
 def main():
     app = QApplication(sys.argv)

@@ -9,7 +9,11 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from PyQt5.QtWidgets import QMainWindow
+import ResultUi
+import resultpage
+import mainclient
+import urllib.request
 
 class Ui_MainWindow(object):
     
@@ -64,7 +68,7 @@ class Ui_MainWindow(object):
         self.searchbox.setClearButtonEnabled(True)
         self.searchbox.setObjectName("searchbox")
         self.layout1.addWidget(self.searchbox)
-        self.text_search = QtWidgets.QLabel(self.centralwidget)
+        self.text_search = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setFamily("Arial")
         font.setPointSize(12)
@@ -638,34 +642,64 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        # connect buttons
         self.retranslateUi(MainWindow)
-        self.kolumank15_text.clicked.connect(self.kolumank15_text.hide) # type: ignore
-        self.t500_text.clicked.connect(self.t500_text.hide) # type: ignore
-        self.tabm7_text.clicked.connect(self.tabm7_text.hide) # type: ignore
-        self.z66ultra_text.clicked.connect(self.z66ultra_text.hide) # type: ignore
-        self.redminote12_text.clicked.connect(self.redminote12_text.hide) # type: ignore
-        self.qcyt13_text.clicked.connect(self.qcyt13_text.hide) # type: ignore
-        self.galaxytaba8_text.clicked.connect(self.galaxytaba8_text.hide) # type: ignore
-        self.galaxya14_text.clicked.connect(self.galaxya14_text.hide) # type: ignore
-        self.surfacelaptopgo_text.clicked.connect(self.surfacelaptopgo_text.hide) # type: ignore
-        self.ideapad315ITL6_text.clicked.connect(self.ideapad315ITL6_text.hide) # type: ignore
-        self.beyerdynamicamiron_text.clicked.connect(self.beyerdynamicamiron_text.hide) # type: ignore
-        self.ipadpro2022_text.clicked.connect(self.ipadpro2022_text.hide) # type: ignore
-        self.iphone13_text.clicked.connect(self.iphone13_text.hide) # type: ignore
-        self.redmiwatch2lite_text.clicked.connect(self.redmiwatch2lite_text.hide) # type: ignore
-        self.galaxywatch5_text.clicked.connect(self.galaxywatch5_text.hide) # type: ignore
-        self.macbookpro2023_text.clicked.connect(self.macbookpro2023_text.hide) # type: ignore
-        self.legion5pro_text.clicked.connect(self.legion5pro_text.hide) # type: ignore
-        self.surfacepro9_text.clicked.connect(self.surfacepro9_text.hide) # type: ignore
-        self.galaxys23_text.clicked.connect(self.galaxys23_text.hide) # type: ignore
-        self.daliio6_text.clicked.connect(self.daliio6_text.hide) # type: ignore
-        self.grouping.currentIndexChanged['int'].connect(self.grouping.hide) # type: ignore
+        self.text_search.clicked.connect(lambda: self.start_searching(searching_for = self.searchbox.text()))
+        self.kolumank15_text.clicked.connect(lambda: self.start_searching(searching_for = self.kolumank15_text.text())) # type: ignore
+        self.t500_text.clicked.connect(lambda: self.start_searching(searching_for = self.t500_text.text())) # type: ignore
+        self.tabm7_text.clicked.connect(lambda: self.start_searching(searching_for = self.tabm7_text.text())) # type: ignore
+        self.z66ultra_text.clicked.connect(lambda: self.start_searching(searching_for = self.z66ultra_text.text())) # type: ignore
+        self.redminote12_text.clicked.connect(lambda: self.start_searching(searching_for = self.redminote12_text.text())) # type: ignore
+        self.qcyt13_text.clicked.connect(lambda: self.start_searching(searching_for = self.qcyt13_text.text())) # type: ignore
+        self.galaxytaba8_text.clicked.connect(lambda: self.start_searching(searching_for = self.galaxytaba8_text.text())) # type: ignore
+        self.galaxya14_text.clicked.connect(lambda: self.start_searching(searching_for = self.galaxya14_text.text())) # type: ignore
+        self.surfacelaptopgo_text.clicked.connect(lambda: self.start_searching(searching_for = self.surfacelaptopgo_text.text())) # type: ignore
+        self.ideapad315ITL6_text.clicked.connect(lambda: self.start_searching(searching_for = self.ideapad315ITL6_text.text())) # type: ignore
+        self.beyerdynamicamiron_text.clicked.connect(lambda: self.start_searching(searching_for = self.beyerdynamicamiron_text.text())) # type: ignore
+        self.ipadpro2022_text.clicked.connect(lambda: self.start_searching(searching_for = self.ipadpro2022_text.text())) # type: ignore
+        self.iphone13_text.clicked.connect(lambda: self.start_searching(searching_for = self.iphone13_text.text())) # type: ignore
+        self.redmiwatch2lite_text.clicked.connect(lambda: self.start_searching(searching_for = self.redmiwatch2lite_text.text())) # type: ignore
+        self.galaxywatch5_text.clicked.connect(lambda: self.start_searching(searching_for = self.galaxywatch5_text.text())) # type: ignore
+        self.macbookpro2023_text.clicked.connect(lambda: self.start_searching(searching_for = self.macbookpro2023_text.text())) # type: ignore
+        self.legion5pro_text.clicked.connect(lambda: self.start_searching(searching_for = self.legion5pro_text.text())) # type: ignore
+        self.surfacepro9_text.clicked.connect(lambda: self.start_searching(searching_for = self.surfacelaptopgo_text.text())) # type: ignore
+        self.galaxys23_text.clicked.connect(lambda: self.start_searching(searching_for = self.galaxys23_text.text())) # type: ignore
+        self.daliio6_text.clicked.connect(lambda: self.start_searching(searching_for = self.daliio6_text.text())) # type: ignore
+        self.grouping.currentIndexChanged['int'].connect(lambda: self.start_searching(searching_for = self.grouping.currentText())) # type: ignore
         self.cart.clicked.connect(self.cart.hide) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+      
+    #show result of scraping
+    def start_searching(self, searching_for = None):
+        if searching_for != None:
+            sfor = searching_for
+        else:
+            sfor = self.searchbox.text()
+        page = 1
+        res = mainclient.main("search", searching_for=sfor, page_num=page)
+        
+        
+        MainWindow = QMainWindow()
+        for i in range(len(res)): 
+            url = res.iloc[i, 0]
+            data = urllib.request.urlopen(url).read()
+            pixmap = QtGui.QPixmap()
+            ui = ResultUi.Ui_MainWindow()   
+            ui.setupUi(MainWindow)
+            ui.label.setText('')
+            ui.label.setPixmap(pixmap)
+            ui.describ_text.append(res.iloc[i, 1])
+            ui.price_text.append(res.iloc[i, 2])
+            ui.link_text.append(res.iloc[i, 3])
+            ui.market_text.append(res.iloc[i, 4])
+        MainWindow.show()
+
+        # 0 -> image , 1 -> descrip , 2 -> price , 3 -> link , 4 -> market , 5 -> Name
+        
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "صفحه اصلی"))
         self.text_search.setText(_translate("MainWindow", "جستجو"))
         self.grouping.setItemText(0, _translate("MainWindow", "دسته بندی کالاها"))
         self.grouping.setItemText(1, _translate("MainWindow", "موبایل"))
@@ -698,14 +732,3 @@ class Ui_MainWindow(object):
         self.surfacelaptopgo_text.setText(_translate("MainWindow", "surface laptop go"))
         self.t500_text.setText(_translate("MainWindow", "T500 ساعت"))
         self.redminote12_text.setText(_translate("MainWindow", "redmi note12 گوشی"))
-
-'''
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
-'''

@@ -141,6 +141,7 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
                 #------------------------------------------------------------
                 #globalisation.main_page = main_connection_to_server[4]().reset_index()
                 globalisation.is_connected = True  
+                return 1
             else :
                 return 0
 
@@ -196,6 +197,8 @@ def helper() :
 if __name__ == '__main__' :
     help(helper)
     main('signin','sinagol1382','SiNagol1382')
+    res = main("search", searching_for="galaxy s23", page_num=1)
+    print(len(res))
     #print(globalisation.main_page)
     #print(main('search',searching_for='loptop'))
     #print(main('favorites_loader',args=['del',"sinagol1382",0]))
