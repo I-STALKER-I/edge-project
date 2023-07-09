@@ -3,3 +3,4 @@ server.py
 client.py
 digikala.csv
 helper.py
+__pycache__

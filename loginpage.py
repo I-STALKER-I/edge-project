@@ -1,10 +1,13 @@
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QDialog, QMainWindow 
+from mainpage1 import Ui_MainWindow
+import mainclient
 from time import sleep
 
-class Login(QWidget):
+
+class Login(QDialog):
     def __init__(self):
         super().__init__()
 
@@ -41,26 +44,28 @@ class Login(QWidget):
         self.error_label.setStyleSheet("color: red;")
         layout.addWidget(self.error_label)
 
-        #show the page
-        self.show()
-
-
     def login(self):
         username = self.username_edit.text()
         password = self.password_edit.text()
 
         # Check if credentials are valid
-        if username == "admin" and password == "password123":
+        if mainclient.main('signin', username, password):
             print("Login successful!")
+            self.accept()
             self.close()
+
         else:
             self.error_label.setText("Invalid username or password")
 
     def signup(self):
+        self.close()
         signup_window = Signup()
-        signup_window.exec_()
+        result = signup_window.exec_()
+        if result == QDialog.DialogCode.Accepted:
+            self.accept()
 
-class Signup(QWidget):
+
+class Signup(QDialog):
     def __init__(self):
         super().__init__()
 
@@ -74,12 +79,6 @@ class Signup(QWidget):
         self.username_edit = QLineEdit()
         layout.addWidget(username_label)
         layout.addWidget(self.username_edit)
-
-        #city box
-        city_label = QLabel("enetr your city:")
-        self.city_edit = QLineEdit()
-        layout.addWidget(city_label)
-        layout.addWidget(self.city_edit)
 
         #password box
         password_label = QLabel("Choose a password:")
@@ -95,8 +94,16 @@ class Signup(QWidget):
         layout.addWidget(confirm_password_label)
         layout.addWidget(self.confirm_password_edit)
 
+        #city box
+        city_label = QLabel("enetr your city:")
+        self.city_edit = QLineEdit()
+        layout.addWidget(city_label)
+        layout.addWidget(self.city_edit)
+
         #sign up button
         signup_button = QPushButton("Sign up")
+        #signup_button.setStyleSheet("color: rgb(0, 0, 0);\n"
+#"background-color: qconicalgradient(cx:0, cy:0, angle:135, stop:0 rgba(255, 255, 0, 69), stop:0.375 rgba(255, 255, 0, 69), stop:0.423533 rgba(251, 255, 0, 145), stop:0.45 rgba(247, 255, 0, 208), stop:0.477581 rgba(255, 244, 71, 130), stop:0.518717 rgba(255, 218, 71, 130), stop:0.55 rgba(255, 255, 0, 255), stop:0.57754 rgba(255, 203, 0, 130), stop:0.625 rgba(255, 255, 0, 69), stop:1 rgba(255, 255, 0, 69));")
         signup_button.clicked.connect(self.signup)
         layout.addWidget(signup_button)
 
@@ -105,8 +112,6 @@ class Signup(QWidget):
         self.error_label.setStyleSheet("color: red;")
         layout.addWidget(self.error_label)
 
-        #show the page
-        self.show()
 
     def signup(self):
         username = self.username_edit.text()
@@ -115,15 +120,10 @@ class Signup(QWidget):
         confirm_password = self.confirm_password_edit.text()
 
         # Check if passwords match
-        if password != confirm_password:
+        if mainclient.main('signup', username, password, password_again = confirm_password):
+            print(f"New user '{username}' created with password '{password}'")
+            self.accept()
+            self.close()
+        else:
             self.error_label.setText("Passwords do not match")
             return
-
-        # Store username and password in database
-        print(f"New user '{username}' created with password '{password}'")
-        self.close()
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    login_window = Login()
-    sys.exit(app.exec_())
