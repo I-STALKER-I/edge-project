@@ -7,6 +7,7 @@ import json
 import time
 import mainpagescraper
 import productloader
+import favorites_loader
 
 
 if __name__ == "__main__" :
@@ -16,7 +17,7 @@ if __name__ == "__main__" :
         [mainpage] = our app's mainpage
         [is connected] = checker if the client has signedin or not"""
         #---------------------------------------------------------------------------------------------
-        main_page = mainpagescraper.main()
+        #main_page = mainpagescraper.main()
 
 
     class client_user :
@@ -70,6 +71,10 @@ if __name__ == "__main__" :
                         link, market = content[1:]
                         products_page_opener(link,market,c)
 
+                    elif content[0] == "favorites_loader" :
+                        args = content[1]
+                        favorites_functioner(c,args)
+
 
 
     def signin(c,username ,password,client) :
@@ -87,7 +92,7 @@ if __name__ == "__main__" :
             c.send('1'.encode())
             client.is_connected = True
             #----------------------------------------------------------------------------------------------------------
-            main_page_sender(c)
+            #main_page_sender(c)
         else :
             c.send("0".encode())
 
@@ -116,7 +121,7 @@ if __name__ == "__main__" :
             client.is_connected = True
             conn.commit()
             #--------------------------------------------------------------------------------------------------------------
-            main_page_sender(c)
+            #main_page_sender(c)
 
 
     def main_page_sender(c) :
@@ -150,7 +155,7 @@ if __name__ == "__main__" :
         c.send(end.encode())
 
     def search(searching_for,page_num,c) :
-        df = mainpagescraper.scraping.multi_search(searching_for,page_num).reset_index().drop('index',axis=1)
+        df = mainpagescraper.scraping.multi_search(searching_for,page_num).reset_index()
         df_dict = df.to_dict()
         mutex = Lock()
         def sender(dicti) :
@@ -186,10 +191,35 @@ if __name__ == "__main__" :
             c.send(receive_json.encode())
             return "products_page_opener successfull"
         except Exception :
-            badlink = json.dumps("Bad link or market")
+            badlink = json.dumps("[Bad] link or market")
             c.send(str(len(badlink)).encode())
             c.send(badlink.encode())
             return "products_page_opener unsuccessful"
+        
+    def favorites_functioner(c,args) :
+        try :
+            if args[0] == 'set' :
+                order, username, image, discrip, price, link, market = args
+                received = favorites_loader.main(order,username=username,image=image,discrip=discrip,price=price,link=link,market=market)
+            elif args[0] == 'get' :
+                order, username = args
+                received = favorites_loader.main(order,username=username)
+            elif args[0] == 'del' :
+                order,username, product_index = args
+                received = favorites_loader.main(order,username=username,product_index=product_index)
+            else :
+                raise ValueError
+            
+            received_json = json.dumps(received.to_dict())
+            c.send(str(len(received_json)).encode())
+            c.send(received_json.encode())
+            return 'favorites_functioner successfull'
+        except Exception :
+            badarg = json.dumps("[Bad] argument")
+            c.send(str(len(badarg)).encode())
+            c.send(badarg.encode())
+            return 'favorites_functioner unsuccessful'
+
 
 
 

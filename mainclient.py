@@ -14,6 +14,7 @@ def connecting_to_server() :
     [client] = A subclass of _socket.socket(for more info type help(client))"""
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try :
+        
         client.connect(("localhost", 9999))
     except Exception :
         print("Error [connection to the server failed]")
@@ -100,19 +101,32 @@ def connecting_to_server() :
                 break
         
         return income
+    
 
-    return (True, signin, signup, disconnection, main_page, search, product_loader)
+    def favorites_loader(args) :
+        client.send(f"['favorites_loader' ,{args}]".encode())
+        while True :
+            messsage_length = client.recv(64).decode()
+            income = client.recv(int(messsage_length))
+            if income :
+                income = json.loads(income.decode())
+                break
+        
+        print(income)
+        return pd.DataFrame(income)
+            
+
+    return (True, signin, signup, disconnection, main_page, search, product_loader,favorites_loader)
 
 
 
-
-def main(order,username=None,password=None,password_again=None,city=None,searching_for = None,page_num = None,link = None, market = None) :
+main_connection_to_server = connecting_to_server()
+def main(order,username=None,password=None,password_again=None,city=None,searching_for = None,page_num = None,link = None, market = None,args=None) :
     '''the main function that controls client
     [order] = the order to do (signin or signup)
     [username] = username of client
     [password] = password of client
     [password_again] = one of the signup requirments that has to be given'''
-    main_connection_to_server = connecting_to_server()
     if main_connection_to_server[0] == True :
         
         #signin = main_connection_to_server[1]
@@ -125,7 +139,7 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
             receiver =  main_connection_to_server[1](username,password)
             if receiver == '1' :
                 #------------------------------------------------------------
-                #globalisation.main_page = main_connection_to_server[4]()
+                #globalisation.main_page = main_connection_to_server[4]().reset_index()
                 globalisation.is_connected = True  
             else :
                 return 0
@@ -134,12 +148,11 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
             receiver = main_connection_to_server[2](username,password,password_again,city)
             if receiver == '1' :
                 #----------------------------------------------------------------------------------
-                #globalisation.main_page = main_connection_to_server[4]()
+                #globalisation.main_page = main_connection_to_server[4]().reset_index()
                 globalisation.is_connected = True
                 return 1
             else :
                 return 0
-            
             
         
 
@@ -148,7 +161,7 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
 
         elif order == "search" :
                 if globalisation.is_connected == True :
-                    return main_connection_to_server[5](searching_for, page_num) 
+                    return main_connection_to_server[5](searching_for, page_num).rename({'level_0':'index'},axis=1).set_index(["indexer",'index'])
                 
                 else :
                     return 0
@@ -156,6 +169,13 @@ def main(order,username=None,password=None,password_again=None,city=None,searchi
         elif order == "product_loader":
             if globalisation.is_connected == True :
                 return main_connection_to_server[6](link,market)
+            
+        elif order == 'favorites_loader' :
+            if globalisation.is_connected == True :
+                return main_connection_to_server[7](args)
+            
+            else :
+                return 0
         
         else :
             raise ValueError
@@ -175,3 +195,7 @@ def helper() :
 
 if __name__ == '__main__' :
     help(helper)
+    main('signin','sinagol1382','SiNagol1382')
+    #print(globalisation.main_page)
+    #print(main('search',searching_for='loptop'))
+    #print(main('favorites_loader',args=['del',"sinagol1382",0]))

@@ -7,6 +7,7 @@ import pandas as pd
 import pandas as pd
 import numpy as np
 import io
+import re
 import time
 
 
@@ -58,6 +59,8 @@ def multi_extract_tecnolife(row,market) :
     thread_link.join()
     thread_price.join()
     row['market'] = market
+    regularexpression(row)
+    
 
     gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True) 
 
@@ -95,6 +98,7 @@ def multi_extract_divar(row, market, index) :
     thread_link.join()
     thread_price.join()
     row['market'] = market
+    regularexpression(row)
 
     gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True)
 
@@ -131,7 +135,10 @@ def discrip(row,class_name) :
     try :
         row["discrip"] = row["seleniums"].find_element(By.CLASS_NAME,class_name).text
     except Exception :
-        row["discrip"] = np.nan
+        try :
+            row["discrip"] = np.nan
+        except Exception :
+            row["discrip"] = pd.Series(np.nan)
 
 def price_divar(row) :
 
@@ -189,9 +196,24 @@ def multi_extract_digikala(row, market) :
     thread_link.join()
     thread_price.join()
     row['market'] = market
+    regularexpression(row)
 
     gloablism.df_global = pd.concat([gloablism.df_global,row.to_frame().T],ignore_index=True) 
 
+def regularexpression(row) :
+    string = row['discrip']
+    if type(string) == str :
+        if re.search('مدل',string) :
+            model = re.findall('^[\w]+(?=\s)',string)[0].strip()
+            try :
+                product_discription = re.findall('(?<=مدل)\s([a-zA-Z-.\s\d]+)(?=[\s\w])',string)[0].strip()
+                row["indexer"] = model + product_discription
+
+            except Exception :
+                row["indexer"] = row["discrip"]
+        
+        else :
+            row["indexer"] = row["discrip"]
 
 
 
@@ -290,6 +312,7 @@ def digikala(search, page_num,queue):
             queue.put("D")
             queue.close()
             print("No products for Digikala!")
+            return
 
         if len(products) == 0 :
             queue.put("N")
@@ -471,8 +494,10 @@ def multi_search(search,page_num) :
     #df_digikala_divar = pd.merge(gloablism.df_digikala, gloablism.df_divar, how='outer')
     #df_glob = pd.merge(df_digikala_divar,gloablism.df_tecnolife,how='outer')
     df_glob = pd.concat([df_digikala_divar,gloablism.df_tecnolife])
-
-    return df_glob
+    try :
+        return df_glob.dropna().reset_index().reset_index().drop('index',axis=1).set_index(['indexer','level_0'])
+    except Exception :
+        return df_glob.dropna().reset_index().reset_index().drop('index',axis=1)
 
 def helper() :
     """for using this module
@@ -486,4 +511,3 @@ def helper() :
 
 if __name__ == '__main__' :
     help(helper)
-    print(multi_search('چوب','1'))
